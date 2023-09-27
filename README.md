@@ -1,5 +1,5 @@
 # CDN API Service
-This service is responsible for content delivery logic. Handles any content that needs to be served to the end user.
+This service is responsible for content delivery logic. Handles any content that needs to be served to the end user. CDN stands for [Content Delivery Network](https://en.wikipedia.org/wiki/Content_delivery_network) and is a standard across multiple products.
 
 API Documentation is created using the [Swagger](https://swagger.io/). The url for the Swagger UI is on the same port as the `APP_PORT` in the `.env` file at 
 
