@@ -24,7 +24,7 @@ vim .env
 
 ### `.env` Template
 ```
-APP_PORT=:8084 // Standard port for this microservice
+APP_PORT=:8086 // Standard port for this microservice
 LOG_LEVEL=trace
 METHOD_LOGGING=false
 ```
