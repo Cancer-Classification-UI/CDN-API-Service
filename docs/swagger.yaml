@@ -1,5 +1,53 @@
 basePath: /api/v1
 definitions:
+  model.Patient:
+    properties:
+      date:
+        type: string
+      date_created:
+        type: string
+      id:
+        type: integer
+      name:
+        type: string
+      samples:
+        type: integer
+    type: object
+  model.PatientData:
+    properties:
+      comments:
+        items:
+          type: string
+        type: array
+      date_created:
+        type: string
+      date_of_birth:
+        type: string
+      id:
+        type: string
+      name:
+        type: string
+      samples:
+        items:
+          $ref: '#/definitions/model.Sample'
+        type: array
+      sex:
+        type: string
+    type: object
+  model.PatientList:
+    properties:
+      patients:
+        items:
+          $ref: '#/definitions/model.Patient'
+        type: array
+    type: object
+  model.Sample:
+    properties:
+      image:
+        type: string
+      prediction:
+        type: number
+    type: object
   model.Test:
     properties:
       amount:
@@ -23,6 +71,66 @@ info:
   title: CDN API
   version: "1.0"
 paths:
+  /patient-data-no-auth:
+    post:
+      consumes:
+      - application/json
+      description: Checks for a matching id in the databse and returns data for that
+        id
+      parameters:
+      - description: id of the patient
+        in: query
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/model.PatientData'
+            type: array
+        "400":
+          description: Bad Request
+        "404":
+          description: Not Found
+        "500":
+          description: Internal Server Error
+      summary: Provides data about a patient
+      tags:
+      - Patient
+  /patient-list-no-auth:
+    post:
+      consumes:
+      - application/json
+      description: Finds username in database and retrieves all patients for that
+        user
+      parameters:
+      - description: username of the doctor
+        in: query
+        name: username
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/model.PatientList'
+            type: array
+        "400":
+          description: Bad Request
+        "404":
+          description: Not Found
+        "500":
+          description: Internal Server Error
+      summary: Retrieves a list of patients for the specified doctor username
+      tags:
+      - Patient
   /test-no-auth:
     get:
       consumes:
