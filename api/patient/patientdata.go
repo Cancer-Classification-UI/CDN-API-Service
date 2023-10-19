@@ -1,10 +1,12 @@
 package auth
 
 import (
+	"encoding/base64"
+	"fmt"
 	"math/rand"
 	"net/http"
+	"os"
 	"time"
-	"fmt"
 
 	"ccu/api"
 	mAPI "ccu/model/api/patientdata"
@@ -45,13 +47,34 @@ func PostPatientData(w http.ResponseWriter, r *http.Request) {
 		Name:        RandomName(),
 		Sex:         RandomSex(),
 		DOB:         RandomDate(),
-		Samples:     []mAPI.Sample{},
-		Comments:    []string{},
+		Samples:     GenerateSamples(),
+		Comments:    []string{"Lorem ipsum dolor sit amet. 1", "Lorem ipsum dolor sit amet. 2", "Lorem ipsum dolor sit amet. 3"},
 	}
 
 	api.RespondOK(w, response)
 }
 
+// Generate Samples with Images and Model output for samples parameter
+func GenerateSamples() []mAPI.Sample {
+	result := []mAPI.Sample{}
+	num_samples := rand.Intn(5)
+
+	for i := 0; i < num_samples; i++ {
+		imageFile := images[rand.Intn(len(images))]
+		imageData, _ := os.ReadFile(imageFile)
+
+		// Encode the image data to Base64
+		base64String := base64.StdEncoding.EncodeToString(imageData)
+
+		result = append(result, mAPI.Sample{
+			Image:           base64String,
+			ModelPrediction: rand.Float64(),
+		})
+	}
+	return result
+}
+
+// Generate random value for sex parameter
 func RandomSex() string {
 	result := "M"
 	if rand.Intn(2) == 1 {
@@ -69,8 +92,12 @@ var (
 		"Smith", "Johnson", "Davis", "Lee", "Garcia", "Wilson", "Taylor",
 		"Martin", "Anderson", "Clark", "Hall", "Moore", "Young", "Walker",
 	}
+	images = []string{
+		"sample_images/ISIC_0034525.jpg", "sample_images/ISIC_0034526.jpg", "sample_images/ISIC_0034527.jpg", "sample_images/ISIC_0034528.jpg", "sample_images/ISIC_0034529.jpg",
+	}
 )
 
+// Generate random name for name parameter
 func RandomName() string {
 	// Select random first and last names
 	first_name := first_names[rand.Intn(len(first_names))]
@@ -79,6 +106,7 @@ func RandomName() string {
 	return fmt.Sprintf("%s %s", first_name, last_name)
 }
 
+// Generate random date for date parameter
 func RandomDate() string {
 	year := rand.Intn(93) + 1930
 
