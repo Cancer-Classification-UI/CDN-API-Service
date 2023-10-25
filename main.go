@@ -11,8 +11,8 @@ import (
 	"syscall"
 	_ "time"
 
-	test "ccu/api/test"
 	patient "ccu/api/patient"
+	test "ccu/api/test"
 
 	log "github.com/sirupsen/logrus"
 
@@ -43,8 +43,8 @@ func main() {
 // Requests
 func handleRequests(r *mux.Router) {
 	r.HandleFunc("/api/v1/test-no-auth", test.GetTest).Methods("GET")
-	r.HandleFunc("/api/v1/patient-list-no-auth", patient.PostPatientList).Methods("POST")
-	r.HandleFunc("/api/v1/patient-data-no-auth", patient.PostPatientData).Methods("POST")
+	r.HandleFunc("/api/v1/patient-list-no-auth", patient.GetPatientList).Methods("GET")
+	r.HandleFunc("/api/v1/patient-data-no-auth", patient.GetPatientData).Methods("GET")
 }
 
 // Build log output file

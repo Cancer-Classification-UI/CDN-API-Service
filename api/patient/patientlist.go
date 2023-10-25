@@ -1,10 +1,10 @@
 package auth
 
 import (
+	"fmt"
 	"math/rand"
 	"net/http"
 	"time"
-	"fmt"
 
 	"ccu/api"
 	mAPI "ccu/model/api/patientlist"
@@ -12,7 +12,7 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-// PostPatientList godoc
+// GetPatientList godoc
 // @Summary      Retrieves a list of patients for the specified doctor username
 // @Description  Finds username in database and retrieves all patients for that user
 // @Tags         Patient
@@ -23,15 +23,14 @@ import (
 // @Failure      400
 // @Failure      404
 // @Failure      500
-// @Router       /patient-list-no-auth [post]
-func PostPatientList(w http.ResponseWriter, r *http.Request) {
-	r.ParseForm()
-	if r.Method != http.MethodPost {
+// @Router       /patient-list-no-auth [get]
+func GetPatientList(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodGet {
 		api.Respond(w, "Invalid request method", http.StatusMethodNotAllowed)
 		return
 	}
 
-	username := r.Form.Get("username")
+	username := r.URL.Query().Get("username")
 
 	if username == "" {
 		api.Respond(w, "Invalid Username Parameter", http.StatusBadRequest)
@@ -42,7 +41,7 @@ func PostPatientList(w http.ResponseWriter, r *http.Request) {
 	patients := []mAPI.Patient{}
 
 	num_patients := rand.Intn(10)
-	
+
 	for i := 0; i < num_patients; i++ {
 		patients = append(patients, mAPI.Patient{
 			Id:          int64(rand.Intn(1000)),

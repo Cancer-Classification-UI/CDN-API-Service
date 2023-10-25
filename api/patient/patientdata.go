@@ -14,7 +14,7 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-// PostPatientData godoc
+// GetPatientData godoc
 // @Summary      Provides data about a patient
 // @Description  Checks for a matching id in the databse and returns data for that id
 // @Tags         Patient
@@ -25,15 +25,14 @@ import (
 // @Failure      400
 // @Failure      404
 // @Failure      500
-// @Router       /patient-data-no-auth [post]
-func PostPatientData(w http.ResponseWriter, r *http.Request) {
-	r.ParseForm()
-	if r.Method != http.MethodPost {
+// @Router       /patient-data-no-auth [get]
+func GetPatientData(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodGet {
 		api.Respond(w, "Invalid request method", http.StatusMethodNotAllowed)
 		return
 	}
 
-	id := r.Form.Get("id")
+	id := r.URL.Query().Get("id")
 
 	if id == "" { // What is the default int value?
 		api.Respond(w, "Invalid ID Parameter", http.StatusBadRequest)
