@@ -25,7 +25,7 @@ import (
 // @Failure      400
 // @Failure      404
 // @Failure      500
-// @Router       /patient-data-no-auth [get]
+// @Router       /patient-data [get]
 func GetPatientData(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodGet {
 		api.Respond(w, "Invalid request method", http.StatusMethodNotAllowed)

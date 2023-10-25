@@ -19,8 +19,8 @@ const docTemplate = `{
     "host": "{{.Host}}",
     "basePath": "{{.BasePath}}",
     "paths": {
-        "/patient-data-no-auth": {
-            "post": {
+        "/patient-data": {
+            "get": {
                 "description": "Checks for a matching id in the databse and returns data for that id",
                 "consumes": [
                     "application/json"
@@ -63,8 +63,8 @@ const docTemplate = `{
                 }
             }
         },
-        "/patient-list-no-auth": {
-            "post": {
+        "/patient-list": {
+            "get": {
                 "description": "Finds username in database and retrieves all patients for that user",
                 "consumes": [
                     "application/json"

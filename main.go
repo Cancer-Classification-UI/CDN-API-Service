@@ -43,8 +43,8 @@ func main() {
 // Requests
 func handleRequests(r *mux.Router) {
 	r.HandleFunc("/api/v1/test-no-auth", test.GetTest).Methods("GET")
-	r.HandleFunc("/api/v1/patient-list-no-auth", patient.GetPatientList).Methods("GET")
-	r.HandleFunc("/api/v1/patient-data-no-auth", patient.GetPatientData).Methods("GET")
+	r.HandleFunc("/api/v1/patient-list", patient.GetPatientList).Methods("GET")
+	r.HandleFunc("/api/v1/patient-data", patient.GetPatientData).Methods("GET")
 }
 
 // Build log output file
@@ -101,7 +101,7 @@ func SetupLog() {
 // Setup http as a go routine
 func SetupHttp(APP_PORT string, r *mux.Router, wg *sync.WaitGroup) {
 	log.Info("Listening and serving on HTTP port", APP_PORT)
-	log.Error(http.ListenAndServe(APP_PORT, r))
+	log.Error(http.ListenAndServe(":"+APP_PORT, r))
 	Cleanup()
 	wg.Done()
 }
@@ -111,7 +111,7 @@ func SetupSwagger(APP_PORT string, r *mux.Router, wg *sync.WaitGroup) {
 	// Serve Swagger UI at the root URL
 	r.PathPrefix("/swagger/").Handler(httpSwagger.Handler())
 
-	log.Info("Swagger is served on url: http://localhost" + APP_PORT + "/swagger/")
+	log.Info("Swagger is served on url: http://localhost:" + APP_PORT + "/swagger/")
 	wg.Done()
 }
 
@@ -128,8 +128,8 @@ func SetupEndpoint() {
 	wg.Add(2) // 2 because Swagger and REST API point
 
 	// Listen and serve
-	go SetupHttp(":"+APP_PORT, r, &wg)
-	go SetupSwagger(":"+APP_PORT, r, &wg)
+	go SetupHttp(APP_PORT, r, &wg)
+	go SetupSwagger(APP_PORT, r, &wg)
 
 	// OS signal handler
 	sig := make(chan os.Signal, 1)
