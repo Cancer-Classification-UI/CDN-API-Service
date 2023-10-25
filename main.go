@@ -128,8 +128,8 @@ func SetupEndpoint() {
 	wg.Add(2) // 2 because Swagger and REST API point
 
 	// Listen and serve
-	go SetupHttp(APP_PORT, r, &wg)
-	go SetupSwagger(APP_PORT, r, &wg)
+	go SetupHttp(":"+APP_PORT, r, &wg)
+	go SetupSwagger(":"+APP_PORT, r, &wg)
 
 	// OS signal handler
 	sig := make(chan os.Signal, 1)
