@@ -1,11 +1,24 @@
 basePath: /api/v1
 definitions:
+  model.AddCommentResponse:
+    properties:
+      success:
+        type: boolean
+    type: object
+  model.AddSampleResponse:
+    properties:
+      success:
+        type: boolean
+    type: object
+  model.CreatePatientResponse:
+    properties:
+      id:
+        type: integer
+      success:
+        type: boolean
+    type: object
   model.Patient:
     properties:
-      date:
-        type: string
-      date_created:
-        type: string
       id:
         type: integer
       name:
@@ -19,17 +32,15 @@ definitions:
         items:
           type: string
         type: array
-      date_created:
-        type: string
       date_of_birth:
         type: string
       id:
-        type: string
+        type: integer
       name:
         type: string
       samples:
         items:
-          $ref: '#/definitions/model.Sample'
+          type: string
         type: array
       sex:
         type: string
@@ -40,13 +51,6 @@ definitions:
         items:
           $ref: '#/definitions/model.Patient'
         type: array
-    type: object
-  model.Sample:
-    properties:
-      image:
-        type: string
-      prediction:
-        type: number
     type: object
   model.Test:
     properties:
@@ -71,6 +75,118 @@ info:
   title: CDN API
   version: "1.0"
 paths:
+  /add-comment:
+    post:
+      consumes:
+      - application/json
+      description: Finds a matching id in the database and adds a comment to the patient
+      parameters:
+      - description: id of the patient
+        in: query
+        name: id
+        required: true
+        type: integer
+      - description: comment to add
+        in: query
+        name: comment
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/model.AddCommentResponse'
+            type: array
+        "400":
+          description: Bad Request
+        "404":
+          description: Not Found
+        "500":
+          description: Internal Server Error
+      summary: Adds a comment to a patient
+      tags:
+      - Patient
+  /add-sample:
+    post:
+      consumes:
+      - application/json
+      description: Finds a matching id in the database and adds a sample to the patient
+      parameters:
+      - description: id of the patient
+        in: query
+        name: id
+        required: true
+        type: integer
+      - description: sample to add
+        in: query
+        name: sample
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/model.AddSampleResponse'
+            type: array
+        "400":
+          description: Bad Request
+        "404":
+          description: Not Found
+        "500":
+          description: Internal Server Error
+      summary: Adds a base64 encoded sample image to a patient
+      tags:
+      - Patient
+  /create-patient:
+    post:
+      consumes:
+      - application/json
+      description: Creates a new patient with a randomly assigned ID
+      parameters:
+      - description: username of the doctor
+        in: query
+        name: username
+        required: true
+        type: string
+      - description: name of the patient
+        in: query
+        name: name
+        required: true
+        type: string
+      - description: sex of the patient
+        in: query
+        name: sex
+        required: true
+        type: string
+      - description: date of birth of the patient
+        in: query
+        name: dob
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/model.CreatePatientResponse'
+            type: array
+        "400":
+          description: Bad Request
+        "404":
+          description: Not Found
+        "500":
+          description: Internal Server Error
+      summary: Creates a table entry for a patient
+      tags:
+      - Patient
   /patient-data:
     get:
       consumes:

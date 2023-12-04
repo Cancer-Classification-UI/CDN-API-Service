@@ -19,6 +19,173 @@ const docTemplate = `{
     "host": "{{.Host}}",
     "basePath": "{{.BasePath}}",
     "paths": {
+        "/add-comment": {
+            "post": {
+                "description": "Finds a matching id in the database and adds a comment to the patient",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Patient"
+                ],
+                "summary": "Adds a comment to a patient",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "id of the patient",
+                        "name": "id",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "comment to add",
+                        "name": "comment",
+                        "in": "query",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/model.AddCommentResponse"
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request"
+                    },
+                    "404": {
+                        "description": "Not Found"
+                    },
+                    "500": {
+                        "description": "Internal Server Error"
+                    }
+                }
+            }
+        },
+        "/add-sample": {
+            "post": {
+                "description": "Finds a matching id in the database and adds a sample to the patient",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Patient"
+                ],
+                "summary": "Adds a base64 encoded sample image to a patient",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "id of the patient",
+                        "name": "id",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "sample to add",
+                        "name": "sample",
+                        "in": "query",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/model.AddSampleResponse"
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request"
+                    },
+                    "404": {
+                        "description": "Not Found"
+                    },
+                    "500": {
+                        "description": "Internal Server Error"
+                    }
+                }
+            }
+        },
+        "/create-patient": {
+            "post": {
+                "description": "Creates a new patient with a randomly assigned ID",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Patient"
+                ],
+                "summary": "Creates a table entry for a patient",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "username of the doctor",
+                        "name": "username",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "name of the patient",
+                        "name": "name",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "sex of the patient",
+                        "name": "sex",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "date of birth of the patient",
+                        "name": "dob",
+                        "in": "query",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/model.CreatePatientResponse"
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request"
+                    },
+                    "404": {
+                        "description": "Not Found"
+                    },
+                    "500": {
+                        "description": "Internal Server Error"
+                    }
+                }
+            }
+        },
         "/patient-data": {
             "get": {
                 "description": "Checks for a matching id in the databse and returns data for that id",
@@ -144,15 +311,36 @@ const docTemplate = `{
         }
     },
     "definitions": {
+        "model.AddCommentResponse": {
+            "type": "object",
+            "properties": {
+                "success": {
+                    "type": "boolean"
+                }
+            }
+        },
+        "model.AddSampleResponse": {
+            "type": "object",
+            "properties": {
+                "success": {
+                    "type": "boolean"
+                }
+            }
+        },
+        "model.CreatePatientResponse": {
+            "type": "object",
+            "properties": {
+                "id": {
+                    "type": "integer"
+                },
+                "success": {
+                    "type": "boolean"
+                }
+            }
+        },
         "model.Patient": {
             "type": "object",
             "properties": {
-                "date": {
-                    "type": "string"
-                },
-                "date_created": {
-                    "type": "string"
-                },
                 "id": {
                     "type": "integer"
                 },
@@ -173,14 +361,11 @@ const docTemplate = `{
                         "type": "string"
                     }
                 },
-                "date_created": {
-                    "type": "string"
-                },
                 "date_of_birth": {
                     "type": "string"
                 },
                 "id": {
-                    "type": "string"
+                    "type": "integer"
                 },
                 "name": {
                     "type": "string"
@@ -188,7 +373,7 @@ const docTemplate = `{
                 "samples": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/model.Sample"
+                        "type": "string"
                     }
                 },
                 "sex": {
@@ -204,17 +389,6 @@ const docTemplate = `{
                     "items": {
                         "$ref": "#/definitions/model.Patient"
                     }
-                }
-            }
-        },
-        "model.Sample": {
-            "type": "object",
-            "properties": {
-                "image": {
-                    "type": "string"
-                },
-                "prediction": {
-                    "type": "number"
                 }
             }
         },

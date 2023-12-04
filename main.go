@@ -13,6 +13,7 @@ import (
 
 	patient "ccu/api/patient"
 	test "ccu/api/test"
+	db "ccu/db"
 
 	log "github.com/sirupsen/logrus"
 
@@ -35,9 +36,10 @@ func main() {
 	fmt.Println("Starting CDN-API microservice...")
 	fmt.Println("No logs will be generated here. Please see log.txt file for logging")
 
-	CreateLog()
 	SetupLog()
+	db.InitDB()
 	SetupEndpoint()
+
 }
 
 // Requests
@@ -45,22 +47,9 @@ func handleRequests(r *mux.Router) {
 	r.HandleFunc("/api/v1/test-no-auth", test.GetTest).Methods("GET")
 	r.HandleFunc("/api/v1/patient-list", patient.GetPatientList).Methods("GET")
 	r.HandleFunc("/api/v1/patient-data", patient.GetPatientData).Methods("GET")
-}
-
-// Build log output file
-func CreateLog() {
-	os.Remove("log.txt")      // remove old log
-	file, err := os.OpenFile( // create new log
-		"log.txt",
-		os.O_APPEND|os.O_CREATE|os.O_WRONLY,
-		0666)
-
-	if err != nil {
-		fmt.Errorf("Cannot create a log file: ", err)
-		os.Exit(1)
-	}
-
-	log.SetOutput(file)
+	r.HandleFunc("/api/v1/create-patient", patient.PostCreatePatient).Methods("POST")
+	r.HandleFunc("/api/v1/add-comment", patient.PostAddComment).Methods("POST")
+	r.HandleFunc("/api/v1/add-sample", patient.PostAddSample).Methods("POST")
 }
 
 // Load in .env variables and setup logging
@@ -108,7 +97,7 @@ func SetupHttp(APP_PORT string, r *mux.Router, wg *sync.WaitGroup) {
 
 // Sets up swagger and serves it
 func SetupSwagger(APP_PORT string, r *mux.Router, wg *sync.WaitGroup) {
-	// Serve Swagger UI at the root URL
+	// Serve Swagger UI at the root URLs
 	r.PathPrefix("/swagger/").Handler(httpSwagger.Handler())
 
 	log.Info("Swagger is served on url: http://localhost:" + APP_PORT + "/swagger/")
@@ -152,4 +141,5 @@ func WaitForOSSignal(sig chan os.Signal, wg *sync.WaitGroup) {
 // Performs cleanup of service to make sure no leaks of resources
 func Cleanup() {
 	fmt.Println("Cleaning up!")
+	db.Cleanup()
 }

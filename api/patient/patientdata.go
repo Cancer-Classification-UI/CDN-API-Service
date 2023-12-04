@@ -1,17 +1,17 @@
 package auth
 
 import (
-	"encoding/base64"
-	"fmt"
-	"math/rand"
+	"context"
 	"net/http"
-	"os"
-	"time"
+	"strconv"
 
 	"ccu/api"
 	mAPI "ccu/model/api/patientdata"
+	db "ccu/db"
 
 	log "github.com/sirupsen/logrus"
+	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
 // GetPatientData godoc
@@ -39,93 +39,51 @@ func GetPatientData(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	log.Info("In patient data handler -------------------------")
-	response := mAPI.PatientData{
-		Id:          id,
-		DateCreated: time.Now(),
-		Name:        RandomName(),
-		Sex:         RandomSex(),
-		DOB:         RandomDate(),
-		Samples:     GenerateSamples(),
-		Comments:    []string{"Lorem ipsum dolor sit amet. 1", "Lorem ipsum dolor sit amet. 2", "Lorem ipsum dolor sit amet. 3"},
+	id_int, err := strconv.Atoi(id)
+	if err != nil {
+		api.Respond(w, "Invalid ID Parameter", http.StatusBadRequest)
+		return
 	}
 
-	api.RespondOK(w, response)
-}
+	// Checks for a specific username in the login Database
+	coll := db.CLIENT.Database("cdn-api-db").Collection("patients")
 
-// Generate Samples with Images and Model output for samples parameter
-func GenerateSamples() []mAPI.Sample {
-	result := []mAPI.Sample{}
-	num_samples := rand.Intn(5)
-
-	for i := 0; i < num_samples; i++ {
-		imageFile := images[rand.Intn(len(images))]
-		imageData, _ := os.ReadFile(imageFile)
-
-		// Encode the image data to Base64
-		base64String := base64.StdEncoding.EncodeToString(imageData)
-
-		result = append(result, mAPI.Sample{
-			Image:           base64String,
-			ModelPrediction: rand.Float64(),
-		})
+	// Search a database for a certain document
+	var result bson.M
+	err = coll.FindOne(context.TODO(), bson.D{{Key: "id", Value: id_int}}).Decode(&result)
+	if err != nil {
+		api.Respond(w, "Invalid ID Parameter", http.StatusBadRequest)
+		return
 	}
-	return result
-}
 
-// Generate random value for sex parameter
-func RandomSex() string {
-	result := "M"
-	if rand.Intn(2) == 1 {
-		result = "F"
-	}
-	return result
-}
-
-var (
-	first_names = []string{
-		"Alice", "Bob", "Charlie", "David", "Eva", "Frank", "Grace", "Hannah",
-		"Ivy", "Jack", "Katie", "Leo", "Mia", "Nathan", "Olivia", "Steve",
-	}
-	last_names = []string{
-		"Smith", "Johnson", "Davis", "Lee", "Garcia", "Wilson", "Taylor",
-		"Martin", "Anderson", "Clark", "Hall", "Moore", "Young", "Walker",
-	}
-	images = []string{
-		"sample_images/ISIC_0034525.jpg", "sample_images/ISIC_0034526.jpg", "sample_images/ISIC_0034527.jpg", "sample_images/ISIC_0034528.jpg", "sample_images/ISIC_0034529.jpg",
-	}
-)
-
-// Generate random name for name parameter
-func RandomName() string {
-	// Select random first and last names
-	first_name := first_names[rand.Intn(len(first_names))]
-	last_name := last_names[rand.Intn(len(last_names))]
-
-	return fmt.Sprintf("%s %s", first_name, last_name)
-}
-
-// Generate random date for date parameter
-func RandomDate() string {
-	year := rand.Intn(93) + 1930
-
-	month := rand.Intn(12) + 1
-
-	days_in_month := 31
-
-	if month == 4 || month == 6 || month == 9 || month == 11 {
-		days_in_month = 30
-	} else if month == 2 {
-		if year%4 == 0 && (year%100 != 0 || year%400 == 0) {
-			days_in_month = 29
+	// Convert primitive.A to []string
+	var samples []string
+	for _, v := range result["samples"].(primitive.A) {
+		if s, ok := v.(string); ok {
+			samples = append(samples, s)
 		} else {
-			days_in_month = 28
+			// Not a string
 		}
 	}
 
-	day := rand.Intn(days_in_month) + 1
+	var comments []string
+	for _, v := range result["comments"].(primitive.A) {
+		if s, ok := v.(string); ok {
+			comments = append(comments, s)
+		} else {
+			// Not a string
+		}
+	}
 
-	date := fmt.Sprintf("%04d-%02d-%02d", year, month, day)
+	log.Info("In patient data handler -------------------------")
+	response := mAPI.PatientData{
+		Id:          result["id"].(int64),
+		Name:        result["name"].(string),
+		Sex:         result["sex"].(string),
+		DOB:         result["dob"].(string),
+		Samples:     samples,
+		Comments:    comments,
+	}
 
-	return date
+	api.RespondOK(w, response)
 }

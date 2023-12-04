@@ -1,15 +1,18 @@
 package auth
 
 import (
-	"fmt"
-	"math/rand"
+	"context"
 	"net/http"
-	"time"
+	_ "time"
 
 	"ccu/api"
 	mAPI "ccu/model/api/patientlist"
+	mAPIDB "ccu/model/api"
+	db "ccu/db"
 
 	log "github.com/sirupsen/logrus"
+	"go.mongodb.org/mongo-driver/bson"
+	_ "go.mongodb.org/mongo-driver/bson/primitive"
 )
 
 // GetPatientList godoc
@@ -40,43 +43,39 @@ func GetPatientList(w http.ResponseWriter, r *http.Request) {
 	log.Info("In patient list handler -------------------------")
 	patients := []mAPI.Patient{}
 
-	num_patients := rand.Intn(10)
+    coll_cdn := db.CLIENT.Database("cdn-api-db").Collection("patients")
 
-	for i := 0; i < num_patients; i++ {
-		patients = append(patients, mAPI.Patient{
-			Id:          int64(rand.Intn(1000)),
-			DateCreated: time.Now(),
-			Name:        RandomName(),
-			Samples:     int64(rand.Intn(10)),
-			Date:        RandomRegistrationDate(),
+    // Define username filter
+    filter := bson.M{"username": username}
+
+    // Retrieve data from MongoDB and store it in the results slice
+    cursor, err := coll_cdn.Find(context.Background(), filter)
+    if err != nil {
+        log.Fatal(err)
+    }
+    defer cursor.Close(context.Background())
+    for cursor.Next(context.Background()) {
+        var patient mAPIDB.CreatePatientDatabase
+        if err := cursor.Decode(&patient); err != nil {
+            log.Fatal(err)
+			api.Respond(w, "Database Error", http.StatusBadRequest)
+			return
+        }
+        patients = append(patients, mAPI.Patient{
+			Id:          patient.ID,
+			Name:        patient.Name,
+			Samples:     int64(len(patient.Samples)),
 		})
-	}
+    }
+
+    // Check for cursor errors after iteration
+    if err := cursor.Err(); err != nil {
+        log.Fatal(err)
+		api.Respond(w, "Database Error", http.StatusBadRequest)
+		return
+    }
 
 	response := mAPI.PatientList{Patients: patients}
 
 	api.RespondOK(w, response)
-}
-
-func RandomRegistrationDate() string {
-	year := rand.Intn(22) + 2000
-
-	month := rand.Intn(12) + 1
-
-	days_in_month := 31
-
-	if month == 4 || month == 6 || month == 9 || month == 11 {
-		days_in_month = 30
-	} else if month == 2 {
-		if year%4 == 0 && (year%100 != 0 || year%400 == 0) {
-			days_in_month = 29
-		} else {
-			days_in_month = 28
-		}
-	}
-
-	day := rand.Intn(days_in_month) + 1
-
-	date := fmt.Sprintf("%04d-%02d-%02d", year, month, day)
-
-	return date
 }
