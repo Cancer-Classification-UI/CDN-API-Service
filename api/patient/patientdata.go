@@ -1,17 +1,20 @@
 package auth
 
 import (
+	"context"
 	"encoding/base64"
 	"fmt"
 	"math/rand"
 	"net/http"
 	"os"
-	"time"
 
 	"ccu/api"
+	"ccu/db"
 	mAPI "ccu/model/api/patientdata"
 
 	log "github.com/sirupsen/logrus"
+	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/mongo"
 )
 
 // GetPatientData godoc
@@ -20,34 +23,80 @@ import (
 // @Tags         Patient
 // @Accept       json
 // @Produce      json
-// @Param        id             query int    true "id of the patient"
+// @Param        ref_id      query string  true "reference id of the samples"
+// @Param        patient_id  query string  true "id of the patient"
 // @Success      200  {array}   mAPI.PatientData
 // @Failure      400
 // @Failure      404
 // @Failure      500
 // @Router       /patient-data [get]
 func GetPatientData(w http.ResponseWriter, r *http.Request) {
+	log.Info("In patient data handler -------------------------")
 	if r.Method != http.MethodGet {
 		api.Respond(w, "Invalid request method", http.StatusMethodNotAllowed)
 		return
 	}
 
-	id := r.URL.Query().Get("id")
-
-	if id == "" { // What is the default int value?
-		api.Respond(w, "Invalid ID Parameter", http.StatusBadRequest)
+	ref_id := r.URL.Query().Get("ref_id")
+	if ref_id == "" { // What is the default int value?
+		api.Respond(w, "Invalid Reference ID Parameter", http.StatusBadRequest)
 		return
 	}
 
-	log.Info("In patient data handler -------------------------")
+	patient_id := r.URL.Query().Get("patient_id")
+	if patient_id == "" { // What is the default int value?
+		api.Respond(w, "Invalid Patient ID Parameter", http.StatusBadRequest)
+		return
+	}
+
+	// Magically grab patient data and also the reference id samples and comments
+	coll_data := db.CLIENT.Database("cdn-api-db").Collection("patientdata")
+	coll_samples := db.CLIENT.Database("cdn-api-db").Collection("patientsamples")
+
+	// Search a db for patient data
+	var result_data bson.M
+	err := coll_data.FindOne(context.Background(), bson.D{{Key: "patient_id", Value: patient_id}}).Decode(&result_data)
+	if err == mongo.ErrNoDocuments {
+		log.Warning("No patient data document was found for patient_id: ", patient_id)
+		api.RespondOK(w, mAPI.PatientData{Name: "", Sex: "", DOB: "", Samples: []mAPI.Sample{}, Comments: []string{}})
+		return
+	} else if err != nil {
+		log.Error("Error while getting patient data", err)
+		api.Respond(w, "Error while getting patient data", http.StatusInternalServerError)
+		return
+	}
+
+	// Search a db for patient data
+	var result_samples bson.M
+	err = coll_samples.FindOne(context.Background(), bson.D{{Key: "ref_id", Value: ref_id}}).Decode(&result_samples)
+	if err == mongo.ErrNoDocuments {
+		log.Warning("No samples document was found for ref_id: ", patient_id)
+		api.RespondOK(w, mAPI.PatientData{Name: "", Sex: "", DOB: "", Samples: []mAPI.Sample{}, Comments: []string{}})
+		return
+	} else if err != nil {
+		log.Error("Error while getting reference id samples", err)
+		api.Respond(w, "Error while getting reference id samples", http.StatusInternalServerError)
+		return
+	}
+
+	// Iterate through samples, add them to a mAPI.Sample struct
+	samples := []mAPI.Sample{}
+	for _, sample := range result_samples["samples"].(bson.A) {
+		samples = append(samples, mAPI.Sample{Image: sample.(string)})
+	}
+
+	// Iterate through comments, add them to a string array
+	comments := []string{}
+	for _, comment := range result_samples["comments"].(bson.A) {
+		comments = append(comments, comment.(string))
+	}
+
 	response := mAPI.PatientData{
-		Id:          id,
-		DateCreated: time.Now(),
-		Name:        RandomName(),
-		Sex:         RandomSex(),
-		DOB:         RandomDate(),
-		Samples:     GenerateSamples(),
-		Comments:    []string{"Lorem ipsum dolor sit amet. 1", "Lorem ipsum dolor sit amet. 2", "Lorem ipsum dolor sit amet. 3"},
+		Name:     result_data["name"].(string),
+		Sex:      result_data["sex"].(string),
+		DOB:      result_data["dob"].(string),
+		Samples:  samples,
+		Comments: comments,
 	}
 
 	api.RespondOK(w, response)
@@ -56,7 +105,7 @@ func GetPatientData(w http.ResponseWriter, r *http.Request) {
 // Generate Samples with Images and Model output for samples parameter
 func GenerateSamples() []mAPI.Sample {
 	result := []mAPI.Sample{}
-	num_samples := rand.Intn(5)
+	num_samples := rand.Intn(5) + 1
 
 	for i := 0; i < num_samples; i++ {
 		imageFile := images[rand.Intn(len(images))]
@@ -66,8 +115,7 @@ func GenerateSamples() []mAPI.Sample {
 		base64String := base64.StdEncoding.EncodeToString(imageData)
 
 		result = append(result, mAPI.Sample{
-			Image:           base64String,
-			ModelPrediction: rand.Float64(),
+			Image: base64String,
 		})
 	}
 	return result

@@ -21,3 +21,4 @@ log*.txt
 
 # Go workspace file
 go.work
+docker-compose.yaml

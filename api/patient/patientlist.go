@@ -1,15 +1,18 @@
 package auth
 
 import (
+	"context"
 	"fmt"
 	"math/rand"
 	"net/http"
-	"time"
 
 	"ccu/api"
+	"ccu/db"
 	mAPI "ccu/model/api/patientlist"
 
 	log "github.com/sirupsen/logrus"
+	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/mongo"
 )
 
 // GetPatientList godoc
@@ -25,6 +28,7 @@ import (
 // @Failure      500
 // @Router       /patient-list [get]
 func GetPatientList(w http.ResponseWriter, r *http.Request) {
+	log.Info("In patient list handler -------------------------")
 	if r.Method != http.MethodGet {
 		api.Respond(w, "Invalid request method", http.StatusMethodNotAllowed)
 		return
@@ -37,23 +41,41 @@ func GetPatientList(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	log.Info("In patient list handler -------------------------")
-	patients := []mAPI.Patient{}
+	coll := db.CLIENT.Database("cdn-api-db").Collection("patientlist")
 
-	num_patients := rand.Intn(10)
+	// Search a database for a certain document
+	cursor, err := coll.Find(context.Background(), bson.D{{Key: "username", Value: username}})
+	if err == mongo.ErrNoDocuments {
+		log.Debug("No documents bound to username", username)
+	} else if err != nil {
+		log.Error("Error while getting patientlist for username", username, err)
+		api.Respond(w, "Error while getting patientlist for username", http.StatusInternalServerError)
+		return
+	}
 
-	for i := 0; i < num_patients; i++ {
-		patients = append(patients, mAPI.Patient{
-			Id:          int64(rand.Intn(1000)),
-			DateCreated: time.Now(),
-			Name:        RandomName(),
-			Samples:     int64(rand.Intn(10)),
-			Date:        RandomRegistrationDate(),
+	// Iterate through the cursor and decode each document
+	patients := []mAPI.PatientListEntry{}
+
+	var result bson.M
+	for cursor.Next(context.Background()) {
+		err := cursor.Decode(&result)
+		if err != nil {
+			log.Warning("Error while decoding a patientlist entry and skipping for username", username, err)
+		}
+
+		// Add the patient to the list
+		patients = append(patients, mAPI.PatientListEntry{
+			Ref_ID:     result["ref_id"].(string),
+			Name:       result["name"].(string),
+			Patient_ID: result["patient_id"].(string),
+			Samples:    result["samples"].(string),
+			Date:       result["date"].(string),
 		})
+
+		log.Debug("Found document for username", username)
 	}
 
 	response := mAPI.PatientList{Patients: patients}
-
 	api.RespondOK(w, response)
 }
 

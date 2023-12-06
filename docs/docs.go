@@ -34,9 +34,16 @@ const docTemplate = `{
                 "summary": "Provides data about a patient",
                 "parameters": [
                     {
-                        "type": "integer",
+                        "type": "string",
+                        "description": "reference id of the samples",
+                        "name": "ref_id",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
                         "description": "id of the patient",
-                        "name": "id",
+                        "name": "patient_id",
                         "in": "query",
                         "required": true
                     }
@@ -144,26 +151,6 @@ const docTemplate = `{
         }
     },
     "definitions": {
-        "model.Patient": {
-            "type": "object",
-            "properties": {
-                "date": {
-                    "type": "string"
-                },
-                "date_created": {
-                    "type": "string"
-                },
-                "id": {
-                    "type": "integer"
-                },
-                "name": {
-                    "type": "string"
-                },
-                "samples": {
-                    "type": "integer"
-                }
-            }
-        },
         "model.PatientData": {
             "type": "object",
             "properties": {
@@ -173,13 +160,7 @@ const docTemplate = `{
                         "type": "string"
                     }
                 },
-                "date_created": {
-                    "type": "string"
-                },
                 "date_of_birth": {
-                    "type": "string"
-                },
-                "id": {
                     "type": "string"
                 },
                 "name": {
@@ -202,8 +183,28 @@ const docTemplate = `{
                 "patients": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/model.Patient"
+                        "$ref": "#/definitions/model.PatientListEntry"
                     }
+                }
+            }
+        },
+        "model.PatientListEntry": {
+            "type": "object",
+            "properties": {
+                "date": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "patient_id": {
+                    "type": "string"
+                },
+                "ref_id": {
+                    "type": "string"
+                },
+                "samples": {
+                    "type": "string"
                 }
             }
         },
@@ -212,9 +213,6 @@ const docTemplate = `{
             "properties": {
                 "image": {
                     "type": "string"
-                },
-                "prediction": {
-                    "type": "number"
                 }
             }
         },
